@@ -1,0 +1,462 @@
+<title>Despertar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=VT323&display=swap">
+<style>
+  /* Layout: uma coluna estreita; o terminal é a peça central, controles e capítulos logo abaixo. */
+  :root {
+    --bg: #0a0d0b;
+    --surface: #101511;
+    --line: #1d2a21;
+    --fg: #d3e4d7;
+    --muted: #84a08b;
+    --accent: #3ee07c;
+    --screen: #000000;
+    --font-display: "VT323", "IBM Plex Mono", ui-monospace, monospace;
+    --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+  .pagina {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 28px 56px;
+    display: grid;
+    gap: 22px;
+  }
+  header { display: grid; gap: 4px; }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(40px, 7vw, 64px);
+    line-height: 0.9;
+    letter-spacing: 0.18em;
+    margin: 0;
+    color: var(--accent);
+    text-wrap: balance;
+  }
+  .sub { margin: 0; color: var(--muted); max-width: 62ch; }
+
+  .tela {
+    position: relative;
+    background: var(--screen);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 0 0 4px var(--surface), 0 18px 60px rgba(0, 0, 0, 0.6);
+  }
+  .tela canvas { display: block; width: 100%; height: auto; image-rendering: auto; }
+  .tela::after {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px);
+    border-radius: 4px;
+  }
+  .capa {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.45);
+    border: 0;
+    border-radius: 10px;
+    color: var(--fg);
+    cursor: pointer;
+    z-index: 2;
+    font: inherit;
+  }
+  .capa span {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    background: rgba(5, 12, 7, 0.85);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.04em;
+  }
+  .capa:focus-visible span, .capa:hover span { background: var(--accent); color: var(--screen); }
+  .capa[hidden] { display: none; }
+  @media (max-width: 560px) {
+    .tela { padding: 6px; }
+    .tela::after { inset: 6px; }
+    .capa span { font-size: 13px; padding: 8px 14px; gap: 8px; }
+  }
+  .carregando { color: var(--muted); font-family: var(--font-mono); font-size: 13px; }
+
+  .controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+  .controles button {
+    font: inherit;
+    color: var(--fg);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+    min-width: 44px;
+  }
+  .controles button:hover { border-color: var(--muted); }
+  .controles button:focus-visible, .capitulos button:focus-visible, input[type="range"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .tempo { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #barra { flex: 1 1 220px; min-width: 0; accent-color: var(--accent); }
+
+  .capitulos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .capitulos button {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 5px 11px;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 8px;
+  }
+  .capitulos button .t { font-variant-numeric: tabular-nums; opacity: 0.7; }
+  .capitulos button[aria-current="true"] { color: var(--accent); border-color: var(--accent); }
+
+  .rodar {
+    display: grid;
+    gap: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 22px;
+  }
+  .rodar h2 {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .rodar pre {
+    margin: 0;
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .rodar pre .c { color: var(--muted); }
+  .rodar ul { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 4px; max-width: 68ch; }
+  .rodar strong { color: var(--fg); font-weight: 500; }
+</style>
+
+<div class="pagina">
+  <header>
+    <h1>DESPERTAR</h1>
+    <p class="sub">Uma partida gravada do protótipo de terminal. A máquina acorda, fala com o jogador e ganha um corpo em ASCII, parte por parte. As respostas do jogador foram digitadas pelo modo demo.</p>
+  </header>
+
+  <div class="tela" id="tela">
+    <canvas id="canvas" aria-label="Gravação do terminal"></canvas>
+    <button class="capa" id="capa" type="button" disabled>
+      <span class="carregando" id="capaTexto">carregando gravação…</span>
+    </button>
+  </div>
+
+  <div class="controles">
+    <button type="button" id="play" aria-label="Reproduzir">▶</button>
+    <span class="tempo" id="tempo">00:00 / 00:00</span>
+    <input type="range" id="barra" min="0" max="1" step="0.05" value="0" aria-label="Posição na gravação">
+    <button type="button" id="vel" aria-label="Velocidade de reprodução">1x</button>
+  </div>
+
+  <ol class="capitulos" id="capitulos" aria-label="Capítulos"></ol>
+
+  <section class="rodar">
+    <h2>Rodar no seu terminal</h2>
+    <pre><span class="c"># Python 3.8+, sem dependências. Terminal de pelo menos 80x24.</span>
+python despertar.py            <span class="c"># joga (uns 3 minutos)</span>
+python despertar.py --rapido   <span class="c"># 3x mais rápido</span>
+python despertar.py --ascii    <span class="c"># se a fonte não tiver katakana</span></pre>
+    <ul>
+      <li>A máquina usa o <strong>nome de usuário do sistema</strong> e a <strong>hora local</strong> para puxar conversa.</li>
+      <li>Ela pede um nome para si. Esse nome aparece até no cartão final.</li>
+      <li><strong>Esc</strong> sai. Qualquer tecla completa a fala que está sendo digitada.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const CAPITULOS = __CAPITULOS__;
+  const CAPA = __CAPA__;
+  const DURACAO = __DURACAO__;
+  const COLS = __COLS__, ROWS = __ROWS__;
+  const CAST = "__CAST__";
+
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  const capa = document.getElementById("capa");
+  const capaTexto = document.getElementById("capaTexto");
+  const btnPlay = document.getElementById("play");
+  const btnVel = document.getElementById("vel");
+  const barra = document.getElementById("barra");
+  const tempoEl = document.getElementById("tempo");
+  const listaCap = document.getElementById("capitulos");
+
+  // ---------------------------------------------------------------- paleta xterm 256
+  const BASE16 = ["#000000","#cd0000","#00cd00","#cdcd00","#0000ee","#cd00cd","#00cdcd","#e5e5e5",
+                  "#7f7f7f","#ff0000","#00ff00","#ffff00","#5c5cff","#ff00ff","#00ffff","#ffffff"];
+  const PALETA = [];
+  for (let n = 0; n < 256; n++) {
+    if (n < 16) { PALETA.push(BASE16[n]); continue; }
+    if (n < 232) {
+      const m = n - 16, v = x => (x ? 55 + x * 40 : 0);
+      PALETA.push(`rgb(${v(Math.floor(m / 36))},${v(Math.floor(m / 6) % 6)},${v(m % 6)})`);
+    } else {
+      const l = 8 + (n - 232) * 10;
+      PALETA.push(`rgb(${l},${l},${l})`);
+    }
+  }
+  PALETA[0] = "#cccccc"; // 0 = cor padrão do terminal
+
+  // ---------------------------------------------------------------- estado do terminal
+  const SEQ = /\x1b\[([0-9;?]*)([A-Za-z])/y;
+  const tela = {
+    chars: new Array(COLS * ROWS).fill(" "),
+    cores: new Uint8Array(COLS * ROWS),
+    cx: 0, cy: 0, cor: 0, resto: "",
+    sujas: new Set(), tudo: true,
+  };
+
+  function escrever(dados) {
+    const s = tela.resto + dados;
+    tela.resto = "";
+    let i = 0;
+    while (i < s.length) {
+      const c = s.charCodeAt(i);
+      if (c === 27) {
+        SEQ.lastIndex = i;
+        const m = SEQ.exec(s);
+        if (!m) {
+          if (/^\x1b(\[[0-9;?]*)?$/.test(s.slice(i))) { tela.resto = s.slice(i); break; }
+          i++; continue;
+        }
+        const p = m[1], f = m[2];
+        if (f === "H") {
+          const a = (p || "1;1").split(";");
+          tela.cy = (parseInt(a[0], 10) || 1) - 1;
+          tela.cx = (parseInt(a[1], 10) || 1) - 1;
+        } else if (f === "J" && p === "2") {
+          tela.chars.fill(" "); tela.cores.fill(0); tela.tudo = true;
+        } else if (f === "m") {
+          const a = p.split(";");
+          if (p === "" || p === "0" || p === "39") tela.cor = 0;
+          else if (a[0] === "38" && a[1] === "5") tela.cor = parseInt(a[2], 10) || 0;
+        }
+        i = SEQ.lastIndex;
+        continue;
+      }
+      i++;
+      if (c < 32) continue;
+      if (tela.cy >= 0 && tela.cy < ROWS && tela.cx >= 0 && tela.cx < COLS) {
+        const k = tela.cy * COLS + tela.cx;
+        tela.chars[k] = s[i - 1];
+        tela.cores[k] = tela.cor;
+        tela.sujas.add(k);
+      }
+      tela.cx++;
+    }
+  }
+
+  function foto() {
+    return { chars: tela.chars.slice(), cores: tela.cores.slice(), cx: tela.cx, cy: tela.cy, cor: tela.cor, resto: tela.resto };
+  }
+  function restaurar(f) {
+    tela.chars = f.chars.slice(); tela.cores = f.cores.slice();
+    tela.cx = f.cx; tela.cy = f.cy; tela.cor = f.cor; tela.resto = f.resto;
+    tela.sujas.clear(); tela.tudo = true;
+  }
+
+  // ---------------------------------------------------------------- desenho no canvas
+  let cw = 8, chh = 16, fonte = "";
+  function medir() {
+    const dpr = window.devicePixelRatio || 1;
+    const pad = parseFloat(getComputedStyle(canvas.parentElement).paddingLeft) || 0;
+    const largura = canvas.parentElement.clientWidth - 2 * pad;
+    cw = Math.max(3, Math.floor((largura * dpr) / COLS));
+    chh = Math.round(cw * 2);
+    canvas.width = cw * COLS;
+    canvas.height = chh * ROWS;
+    fonte = `${(cw / 0.6).toFixed(1)}px "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace`;
+    tela.tudo = true;
+    desenhar();
+  }
+  function celula(k) {
+    const x = (k % COLS) * cw, y = Math.floor(k / COLS) * chh;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(x, y, cw, chh);
+    const ch = tela.chars[k];
+    if (ch !== " ") {
+      ctx.fillStyle = PALETA[tela.cores[k]];
+      ctx.fillText(ch, x + cw / 2, y + chh * 0.54, cw * 1.02);
+    }
+  }
+  function desenhar() {
+    ctx.font = fonte;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    if (tela.tudo) {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let k = 0; k < COLS * ROWS; k++) if (tela.chars[k] !== " ") celula(k);
+      tela.tudo = false;
+    } else {
+      for (const k of tela.sujas) celula(k);
+    }
+    tela.sujas.clear();
+  }
+
+  // ---------------------------------------------------------------- reprodução
+  let eventos = [], chaves = [], prox = 0, t = 0, tocando = false, vel = 1, ultimo = 0;
+
+  function avancarAte(alvo) {
+    while (prox < eventos.length && eventos[prox][0] <= alvo) {
+      escrever(eventos[prox][1]);
+      prox++;
+    }
+  }
+  function buscar(alvo) {
+    alvo = Math.max(0, Math.min(DURACAO, alvo));
+    let ch = chaves[0];
+    for (const c of chaves) { if (c.t <= alvo) ch = c; else break; }
+    restaurar(ch.foto);
+    prox = ch.prox;
+    t = alvo;
+    avancarAte(t);
+    desenhar();
+    atualizarUI(true);
+  }
+
+  const fmt = s => {
+    s = Math.max(0, Math.floor(s));
+    return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  };
+  let capAtual = -1;
+  function atualizarUI(forcar) {
+    tempoEl.textContent = `${fmt(t)} / ${fmt(DURACAO)}`;
+    if (forcar || !arrastando) barra.value = t.toFixed(2);
+    let idx = 0;
+    CAPITULOS.forEach((c, i) => { if (t + 0.05 >= c.t) idx = i; });
+    if (idx !== capAtual) {
+      capAtual = idx;
+      listaCap.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-current", i === idx ? "true" : "false"));
+    }
+    btnPlay.textContent = tocando ? "❚❚" : (t >= DURACAO ? "↺" : "▶");
+    btnPlay.setAttribute("aria-label", tocando ? "Pausar" : "Reproduzir");
+  }
+
+  function quadro(agora) {
+    if (tocando) {
+      t += Math.min(0.25, (agora - ultimo) / 1000) * vel;
+      if (t >= DURACAO) { t = DURACAO; tocando = false; }
+      avancarAte(t);
+      desenhar();
+      atualizarUI(false);
+    }
+    ultimo = agora;
+    requestAnimationFrame(quadro);
+  }
+
+  function tocar() {
+    capa.hidden = true;
+    if (t >= DURACAO) buscar(0);
+    tocando = true;
+    ultimo = performance.now();
+    atualizarUI(true);
+  }
+  function pausar() { tocando = false; atualizarUI(true); }
+
+  let arrastando = false;
+  barra.addEventListener("input", () => { arrastando = true; capa.hidden = true; buscar(parseFloat(barra.value)); });
+  barra.addEventListener("change", () => { arrastando = false; });
+  btnPlay.addEventListener("click", () => (tocando ? pausar() : tocar()));
+  btnVel.addEventListener("click", () => {
+    vel = vel === 1 ? 2 : 1;
+    btnVel.textContent = `${vel}x`;
+  });
+  capa.addEventListener("click", () => { buscar(0); tocar(); });
+  window.addEventListener("resize", () => { medir(); });
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space" && e.target === document.body) { e.preventDefault(); tocando ? pausar() : tocar(); }
+  });
+
+  CAPITULOS.forEach(c => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = `<span class="t">${fmt(c.t)}</span><span></span>`;
+    b.lastChild.textContent = c.nome;
+    b.addEventListener("click", () => { buscar(c.t); tocar(); });
+    li.appendChild(b);
+    listaCap.appendChild(li);
+  });
+
+  async function carregar() {
+    const bin = atob(CAST);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const texto = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+    const linhas = texto.split("\n");
+    for (let i = 1; i < linhas.length; i++) {
+      if (!linhas[i]) continue;
+      const e = JSON.parse(linhas[i]);
+      eventos.push([e[0], e[2]]);
+    }
+    // Passada inicial: guarda uma "foto" da tela a cada 4 s para a busca ser instantânea.
+    chaves.push({ t: 0, prox: 0, foto: foto() });
+    let proxFoto = 4;
+    for (let i = 0; i < eventos.length; i++) {
+      if (eventos[i][0] >= proxFoto) {
+        chaves.push({ t: eventos[i][0] - 1e-6, prox: i, foto: foto() });
+        proxFoto += 4;
+      }
+      escrever(eventos[i][1]);
+    }
+    tela.sujas.clear();
+    barra.max = DURACAO.toFixed(2);
+    medir();
+    buscar(CAPA);
+    capa.disabled = false;
+    capaTexto.className = "";
+    capaTexto.textContent = `▶  assistir a partida · ${fmt(DURACAO)}`;
+    requestAnimationFrame(quadro);
+  }
+
+  (document.fonts ? document.fonts.load('16px "IBM Plex Mono"').catch(() => {}) : Promise.resolve())
+    .then(carregar)
+    .catch(err => { capaTexto.textContent = "não foi possível carregar a gravação neste navegador."; console.error(err); });
+})();
+</script>
