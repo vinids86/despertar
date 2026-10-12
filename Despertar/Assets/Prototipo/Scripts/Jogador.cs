@@ -19,6 +19,7 @@ public class Jogador : MonoBehaviour
     public float balancoAltura = 0.045f; // quanto a cabeça desce a cada pisada
     public float balancoLado = 0.03f; // de um lado ao outro a cada dois passos
     public float balancoGiro = 0.6f; // graus
+    public float balancoArma = 0.02f; // a arma ainda se move na tela: desce no centro a cada pisada e sobe nos lados
 
     [Header("Dash")]
     public float dashVelocidade = 26f;
@@ -375,8 +376,10 @@ public class Jogador : MonoBehaviour
         {
             // na recarga a arma desce, inclina e volta
             float baixar = Mathf.Sin(ProgressoRecarga * Mathf.PI);
-            arma.localPosition = armaBase + new Vector3(0f, 0f, -0.06f) * recuo + new Vector3(-0.14f, 0.06f, 0.06f) * golpe + new Vector3(0f, -0.12f, -0.03f) * baixar;
-            arma.localRotation = Quaternion.Euler(-12f * recuo + 30f * baixar, 0f, 35f * golpe - 20f * baixar) * armaRotBase;
+            // ao andar a arma vai para o lado oposto ao da cabeça, como se ficasse um pouco para trás
+            Vector3 balancoMao = new Vector3(-ladoPasso * onda, onda - balanco, 0f) * balancoArma;
+            arma.localPosition = armaBase + balancoMao + new Vector3(0f, 0f, -0.06f) * recuo + new Vector3(-0.14f, 0.06f, 0.06f) * golpe + new Vector3(0f, -0.12f, -0.03f) * baixar;
+            arma.localRotation = Quaternion.Euler(-12f * recuo + 30f * baixar, 0f, 35f * golpe - 20f * baixar + ladoPasso * onda * 2.5f) * armaRotBase;
         }
     }
 }
