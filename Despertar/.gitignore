@@ -1,0 +1,17 @@
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+*.csproj
+*.sln
+*.slnx
+.vs/
+.idea/
+/[Mm]emoryCaptures/
+
+# pacotes da Synty: pagos (a licença não permite redistribuir) e grandes; reimportar dos .unitypackage
+/[Aa]ssets/[Ss]ynty/
+/[Aa]ssets/[Ss]ynty.meta
