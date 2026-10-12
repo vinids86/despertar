@@ -7421,6 +7421,7 @@ MonoBehaviour:
   passo: {fileID: 8300000, guid: 9108851fcb95b9245b12bf17b46bf9e0, type: 3}
   tiro: {fileID: 8300000, guid: ba206113df0871240aa187dacbc2a84d, type: 3}
   recarga: {fileID: 8300000, guid: 66948c6f057b46449a2e3ffe048a80a1, type: 3}
+  vazio: {fileID: 8300000, guid: 982d4a7f0f2eb4a48af1b61f05c4c881, type: 3}
 --- !u!114 &1566222854
 MonoBehaviour:
   m_ObjectHideFlags: 0

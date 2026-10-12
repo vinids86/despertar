@@ -1,22 +1,22 @@
 using System;
 using UnityEngine;
 
-// Sons gerados por código, menos os passos, o tiro e a recarga do jogador (arquivos em Prototipo/Sons, ligados pelo montador da cena).
+// Sons gerados por código, menos os passos, o tiro, a recarga e o gatilho vazio do jogador (arquivos em Prototipo/Sons, ligados pelo montador da cena).
 // O que acontece no mundo fica mais grave em câmera lenta; o que é do jogador, não.
 public class Som : MonoBehaviour
 {
     public static Som I;
 
-    public AudioClip passo, tiro, recarga;
+    public AudioClip passo, tiro, recarga, vazio;
 
     const int Taxa = 44100;
-    // os arquivos começam com um pouco de silêncio (~0,12 s o passo, ~0,1 s o tiro)
-    const float SilencioPasso = 0.1f, SilencioTiro = 0.09f;
+    // os arquivos começam com um pouco de silêncio (~0,12 s o passo, ~0,1 s o tiro, ~0,25 s o gatilho vazio)
+    const float SilencioPasso = 0.1f, SilencioTiro = 0.09f, SilencioVazio = 0.24f;
     // a recarga tem dois cliques (pente sai, pente entra) separados por um silêncio em ~0,29 s
     const float InicioRecarga = 0.09f, CorteRecarga = 0.29f;
     AudioSource[] fontes;
     int proxima;
-    AudioClip tiroInimigo, aparar, perfeito, esquiva, dano, entrarLento, sairLento, morte, dash, erro, vazio, tirarPente, porPente;
+    AudioClip tiroInimigo, aparar, perfeito, esquiva, dano, entrarLento, sairLento, morte, dash, erro, tirarPente, porPente;
 
     void Awake()
     {
@@ -44,9 +44,6 @@ public class Som : MonoBehaviour
         erro = Gerar("erro", 0.12f, t => Mathf.Sign(Seno(220f, t)) * Mathf.Exp(-t * 20f) * 0.12f);
         entrarLento = Varredura("entrar lento", 320f, 55f, 0.5f, 0.5f);
         sairLento = Varredura("sair lento", 70f, 260f, 0.3f, 0.4f);
-
-        // gatilho sem bala: clique metálico
-        vazio = Gerar("vazio", 0.08f, t => (Ruido() * Mathf.Exp(-t * 120f) * 0.5f + Seno(3200f, t) * Mathf.Exp(-t * 45f) * 0.3f) * 0.6f);
 
         // o arquivo da recarga vira dois: um clique quando ela começa, outro quando termina
         tirarPente = Trecho(recarga, InicioRecarga, CorteRecarga);
@@ -122,7 +119,7 @@ public class Som : MonoBehaviour
     public void Passo() => Tocar(passo, 0.35f, false, 0.08f, SilencioPasso);
     public void Recarga() => Tocar(tirarPente, 0.7f, false);
     public void Engatilhar() => Tocar(porPente, 0.7f, false);
-    public void Vazio() => Tocar(vazio, 0.6f, false);
+    public void Vazio() => Tocar(vazio, 0.6f, false, 0.03f, SilencioVazio);
     public void TiroInimigo() => Tocar(tiroInimigo, 0.5f);
     public void Aparar(bool foiPerfeito) => Tocar(foiPerfeito ? perfeito : aparar, foiPerfeito ? 0.9f : 0.7f, false, 0.02f);
     public void Esquiva() => Tocar(esquiva, 0.7f, false);
