@@ -1,20 +1,22 @@
 using System;
 using UnityEngine;
 
-// Sons gerados por código, menos os passos e o tiro do jogador (arquivos em Prototipo/Sons, ligados pelo montador da cena).
+// Sons gerados por código, menos os passos, o tiro e a recarga do jogador (arquivos em Prototipo/Sons, ligados pelo montador da cena).
 // O que acontece no mundo fica mais grave em câmera lenta; o que é do jogador, não.
 public class Som : MonoBehaviour
 {
     public static Som I;
 
-    public AudioClip passo, tiro;
+    public AudioClip passo, tiro, recarga;
 
     const int Taxa = 44100;
     // os arquivos começam com um pouco de silêncio (~0,12 s o passo, ~0,1 s o tiro)
     const float SilencioPasso = 0.1f, SilencioTiro = 0.09f;
+    // a recarga tem dois cliques (pente sai, pente entra) separados por um silêncio em ~0,29 s
+    const float InicioRecarga = 0.09f, CorteRecarga = 0.29f;
     AudioSource[] fontes;
     int proxima;
-    AudioClip tiroInimigo, aparar, perfeito, esquiva, dano, entrarLento, sairLento, morte, dash, erro, recarga, engatilhar, vazio;
+    AudioClip tiroInimigo, aparar, perfeito, esquiva, dano, entrarLento, sairLento, morte, dash, erro, vazio, tirarPente, porPente;
 
     void Awake()
     {
@@ -43,11 +45,12 @@ public class Som : MonoBehaviour
         entrarLento = Varredura("entrar lento", 320f, 55f, 0.5f, 0.5f);
         sairLento = Varredura("sair lento", 70f, 260f, 0.3f, 0.4f);
 
-        // cliques metálicos da recarga: tirar o pente; pôr o pente e puxar o ferrolho; gatilho sem bala
-        float Clique(float t, float hz) => t < 0f ? 0f : Ruido() * Mathf.Exp(-t * 120f) * 0.5f + Seno(hz, t) * Mathf.Exp(-t * 45f) * 0.3f;
-        recarga = Gerar("recarga", 0.2f, t => Clique(t, 2400f) + Clique(t - 0.07f, 1600f) * 0.6f);
-        engatilhar = Gerar("engatilhar", 0.3f, t => Clique(t, 1800f) + Clique(t - 0.12f, 2800f) * 0.9f);
-        vazio = Gerar("vazio", 0.08f, t => Clique(t, 3200f) * 0.6f);
+        // gatilho sem bala: clique metálico
+        vazio = Gerar("vazio", 0.08f, t => (Ruido() * Mathf.Exp(-t * 120f) * 0.5f + Seno(3200f, t) * Mathf.Exp(-t * 45f) * 0.3f) * 0.6f);
+
+        // o arquivo da recarga vira dois: um clique quando ela começa, outro quando termina
+        tirarPente = Trecho(recarga, InicioRecarga, CorteRecarga);
+        porPente = Trecho(recarga, CorteRecarga, float.MaxValue);
     }
 
     static AudioClip Gerar(string nome, float duracao, Func<float, float> onda)
@@ -59,6 +62,23 @@ public class Som : MonoBehaviour
         var clip = AudioClip.Create(nome, n, 1, Taxa, false);
         clip.SetData(dados, 0);
         return clip;
+    }
+
+    // Pedaço [de, ate) de um clipe (em segundos), como um clipe novo. Precisa do clipe descomprimido ao carregar.
+    static AudioClip Trecho(AudioClip clip, float de, float ate)
+    {
+        if (clip == null || !clip.LoadAudioData())
+            return null;
+        int ini = Mathf.Clamp(Mathf.RoundToInt(de * clip.frequency), 0, clip.samples);
+        int fim = Mathf.Clamp(Mathf.RoundToInt(Mathf.Min(ate, clip.length) * clip.frequency), ini, clip.samples);
+        if (fim <= ini)
+            return null;
+        var dados = new float[(fim - ini) * clip.channels];
+        if (!clip.GetData(dados, ini))
+            return null;
+        var trecho = AudioClip.Create(clip.name + " " + de, fim - ini, clip.channels, clip.frequency, false);
+        trecho.SetData(dados, 0);
+        return trecho;
     }
 
     static AudioClip Varredura(string nome, float de, float para, float duracao, float volume)
@@ -100,8 +120,8 @@ public class Som : MonoBehaviour
 
     public void TiroJogador() => Tocar(tiro, 0.5f, false, 0.05f, SilencioTiro);
     public void Passo() => Tocar(passo, 0.35f, false, 0.08f, SilencioPasso);
-    public void Recarga() => Tocar(recarga, 0.6f, false);
-    public void Engatilhar() => Tocar(engatilhar, 0.7f, false);
+    public void Recarga() => Tocar(tirarPente, 0.7f, false);
+    public void Engatilhar() => Tocar(porPente, 0.7f, false);
     public void Vazio() => Tocar(vazio, 0.6f, false);
     public void TiroInimigo() => Tocar(tiroInimigo, 0.5f);
     public void Aparar(bool foiPerfeito) => Tocar(foiPerfeito ? perfeito : aparar, foiPerfeito ? 0.9f : 0.7f, false, 0.02f);

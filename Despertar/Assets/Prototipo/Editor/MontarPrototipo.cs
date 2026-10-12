@@ -99,6 +99,7 @@ public static class MontarPrototipo
         var som = jogo.AddComponent<Som>();
         som.passo = AssetDatabase.LoadAssetAtPath<AudioClip>(Pasta + "/Sons/PassoPedra.wav");
         som.tiro = AssetDatabase.LoadAssetAtPath<AudioClip>(Pasta + "/Sons/TiroPistola.wav");
+        som.recarga = AssetDatabase.LoadAssetAtPath<AudioClip>(Pasta + "/Sons/RecargaArma.wav");
         jogo.AddComponent<HUD>();
         return jogo;
     }
