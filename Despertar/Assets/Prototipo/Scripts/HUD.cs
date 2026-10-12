@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 // Interface feita com as peças do pacote INTERFACE Sci-Fi Soldier HUD (Synty): mira, anel de tempo do parry,
-// barra da câmera lenta, vida, munição, onda/objetivo, avisos e ajuda.
+// barra da câmera lenta, vida, munição, objetivo, avisos e ajuda.
 // O anel funciona como num jogo de ritmo: ele fecha conforme a bala chega; aperte quando encostar no anel fixo.
 // Prefabs, sprites e fontes são preenchidos pelo montador da cena (MontarPrototipo.PreencherHUD).
 public class HUD : MonoBehaviour
@@ -127,7 +127,7 @@ public class HUD : MonoBehaviour
             balas[i].gameObject.SetActive(j != null && i < j.pente);
         }
 
-        // onda ou objetivo, em cima à esquerda; a ajuda logo abaixo
+        // objetivo, em cima à esquerda; a ajuda logo abaixo
         etiqueta = Colocar(prefabEtiqueta, raiz).GetComponent<Animator>();
         Ancorar(etiqueta.transform, new Vector2(0f, 1f), new Vector2(80f, -80f), 1f);
         etiqueta.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -210,8 +210,7 @@ public class HUD : MonoBehaviour
         nomeArma.text = semMunicao ? "SEM MUNIÇÃO" : "PISTOLA";
         nomeArma.color = semMunicao ? new Color(1f, 0.4f, 0.35f) : Color.white;
 
-        string texto = Ondas.I != null ? "onda " + Mathf.Max(1, Ondas.I.Onda) + "/" + Ondas.I.Total + "   agentes: " + Inimigo.Vivos.Count
-            : Fase.I != null ? Fase.I.Status : "";
+        string texto = Fase.I != null ? Fase.I.Status : "";
         etiqueta.gameObject.SetActive(texto.Length > 0);
         if (texto.Length > 0)
             etiqueta.SetBool("Active", true); // sem isso a etiqueta do pacote sai sozinha, como um evento

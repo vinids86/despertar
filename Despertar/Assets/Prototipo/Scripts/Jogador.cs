@@ -115,7 +115,7 @@ public class Jogador : MonoBehaviour
         float agora = Time.unscaledTime;
 
         // R é recarregar; só reinicia quando a partida acabou (morto ou simulação limpa)
-        bool acabou = Morto || (Fase.I != null && Fase.I.Venceu) || (Ondas.I != null && Ondas.I.Venceu);
+        bool acabou = Morto || (Fase.I != null && Fase.I.Venceu);
         if (kb.backspaceKey.wasPressedThisFrame || (acabou && kb.rKey.wasPressedThisFrame))
         {
             Time.timeScale = 1f;
