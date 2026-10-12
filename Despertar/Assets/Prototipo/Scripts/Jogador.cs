@@ -183,7 +183,7 @@ public class Jogador : MonoBehaviour
                 Atirar(agora);
             else if (Reserva > 0)
                 Recarregar(agora);
-            else if (mouse.leftButton.wasPressedThisFrame)
+            else if (mouse.leftButton.wasPressedThisFrame && !acabou) // não apaga o aviso de fim
             {
                 Som.I?.Vazio();
                 MostrarAviso("sem munição", new Color(1f, 0.45f, 0.4f), 0.6f);
