@@ -13,6 +13,7 @@ public class Jogador : MonoBehaviour
     public float gravidade = -24f;
     public float forcaPulo = 8f;
     public float sensibilidade = 0.1f;
+    public float passada = 2.2f; // metros andados entre um som de passo e outro
 
     [Header("Dash")]
     public float dashVelocidade = 26f;
@@ -56,7 +57,7 @@ public class Jogador : MonoBehaviour
     float yaw, pitch, velY;
     Vector3 dashDir;
     float dashAte, dashIntocavelAte, proximoDash, proximoTiro, invulneravelAte, apararBloqueadoAte;
-    float tremor, recuo, golpe, inclinacao, fovBase;
+    float tremor, recuo, golpe, inclinacao, fovBase, andadoDesdePasso, tempoNoAr;
     Vector3 camBase, armaBase;
     Quaternion armaRotBase;
 
@@ -147,7 +148,9 @@ public class Jogador : MonoBehaviour
         bool emDash = agora < dashAte;
         Vector3 movimento = emDash ? dashDir * dashVelocidade : dir * velocidade;
         velY += gravidade * dt;
+        Vector3 antes = transform.position;
         cc.Move((movimento + Vector3.up * velY) * dt);
+        Passos(transform.position - antes, emDash, dt);
         float inclinacaoAlvo = -x * 2.5f + (emDash ? -Vector3.Dot(dashDir, transform.right) * 8f : 0f);
         inclinacao = Mathf.Lerp(inclinacao, inclinacaoAlvo, dt * 10f);
 
@@ -163,6 +166,34 @@ public class Jogador : MonoBehaviour
             Aparar(agora);
 
         AtualizarCamera(dt);
+    }
+
+    // Um passo a cada "passada" metros andados no chão (o dash não conta) e um ao aterrissar.
+    void Passos(Vector3 deslocamento, bool emDash, float dt)
+    {
+        if (!cc.isGrounded)
+        {
+            tempoNoAr += dt;
+            return;
+        }
+        deslocamento.y = 0f;
+        if (tempoNoAr > 0.2f) // ignora as piscadas do isGrounded em degraus e rampas
+        {
+            Som.I?.Passo();
+            andadoDesdePasso = 0f;
+        }
+        else if (!emDash)
+        {
+            float d = deslocamento.magnitude;
+            if (d < 0.001f)
+                andadoDesdePasso = passada * 0.5f; // parado: o primeiro passo vem logo ao voltar a andar
+            else if ((andadoDesdePasso += d) >= passada)
+            {
+                Som.I?.Passo();
+                andadoDesdePasso = 0f;
+            }
+        }
+        tempoNoAr = 0f;
     }
 
     void Atirar(float agora)

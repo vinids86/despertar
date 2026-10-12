@@ -96,7 +96,9 @@ public static class MontarPrototipo
         recursos.bala = Mat("Brilho", "Universal Render Pipeline/Unlit", m => m.SetColor("_BaseColor", new Color(4f, 0.4f, 0.3f)));
         recursos.rastro = Mat("Rastro", "Sprites/Default", m => { });
         jogo.AddComponent<TempoBala>();
-        jogo.AddComponent<Som>();
+        var som = jogo.AddComponent<Som>();
+        som.passo = AssetDatabase.LoadAssetAtPath<AudioClip>(Pasta + "/Sons/PassoPedra.wav");
+        som.tiro = AssetDatabase.LoadAssetAtPath<AudioClip>(Pasta + "/Sons/TiroPistola.wav");
         jogo.AddComponent<HUD>();
         return jogo;
     }
@@ -348,10 +350,10 @@ public static class MontarPrototipo
             a.transform.localRotation = Quaternion.Euler(0f, -4f, 0f);
             arma = a.transform;
 
-            var b = Limites(a);
+            // furo do cano no mesh da SM_Wep_Pistol_01 (os limites incluem o cabo e jogavam o ponto para baixo)
             boca = new GameObject("Boca").transform;
-            boca.SetParent(arma, true);
-            boca.position = new Vector3(b.center.x, b.center.y + b.extents.y * 0.4f, b.max.z);
+            boca.SetParent(arma, false);
+            boca.localPosition = new Vector3(0f, 0.061f, 0.21f);
         }
 
         var j = go.AddComponent<Jogador>();

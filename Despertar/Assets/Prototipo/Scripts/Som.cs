@@ -1,16 +1,20 @@
 using System;
 using UnityEngine;
 
-// Sons gerados por código (o protótipo não tem arquivos de áudio).
+// Sons gerados por código, menos os passos e o tiro do jogador (arquivos em Prototipo/Sons, ligados pelo montador da cena).
 // O que acontece no mundo fica mais grave em câmera lenta; o que é do jogador, não.
 public class Som : MonoBehaviour
 {
     public static Som I;
 
+    public AudioClip passo, tiro;
+
     const int Taxa = 44100;
+    // os arquivos começam com um pouco de silêncio (~0,12 s o passo, ~0,1 s o tiro)
+    const float SilencioPasso = 0.1f, SilencioTiro = 0.09f;
     AudioSource[] fontes;
     int proxima;
-    AudioClip tiro, tiroInimigo, aparar, perfeito, esquiva, dano, entrarLento, sairLento, morte, dash, erro;
+    AudioClip tiroInimigo, aparar, perfeito, esquiva, dano, entrarLento, sairLento, morte, dash, erro;
 
     void Awake()
     {
@@ -28,7 +32,6 @@ public class Som : MonoBehaviour
         float Ruido() => (float)(rng.NextDouble() * 2.0 - 1.0);
         float Seno(float hz, float t) => Mathf.Sin(2f * Mathf.PI * hz * t);
 
-        tiro = Gerar("tiro", 0.16f, t => Ruido() * Mathf.Exp(-t * 30f) * 0.9f + Seno(90f, t) * Mathf.Exp(-t * 20f) * 0.6f);
         tiroInimigo = Gerar("tiro inimigo", 0.22f, t => Ruido() * Mathf.Exp(-t * 22f) * 0.6f + Seno(140f, t) * Mathf.Exp(-t * 14f) * 0.45f);
         aparar = Gerar("aparar", 0.35f, t => (Seno(1900f, t) + 0.5f * Seno(3800f, t)) * Mathf.Exp(-t * 12f) * 0.4f + Ruido() * Mathf.Exp(-t * 80f) * 0.5f);
         perfeito = Gerar("perfeito", 0.7f, t => (Seno(1500f, t) + 0.8f * Seno(2250f, t)) * Mathf.Exp(-t * 5f) * 0.3f + Ruido() * Mathf.Exp(-t * 60f) * 0.6f);
@@ -68,16 +71,29 @@ public class Som : MonoBehaviour
         return clip;
     }
 
-    void Tocar(AudioClip clip, float volume, bool doMundo = true, float variacao = 0.05f)
+    void Tocar(AudioClip clip, float volume, bool doMundo = true, float variacao = 0.05f, float inicio = 0f)
     {
+        if (clip == null)
+            return;
         var f = fontes[proxima];
         proxima = (proxima + 1) % fontes.Length;
         float escala = doMundo ? Mathf.Lerp(0.5f, 1f, Mathf.Clamp01(Time.timeScale)) : 1f;
         f.pitch = escala * (1f + UnityEngine.Random.Range(-variacao, variacao));
-        f.PlayOneShot(clip, volume);
+        if (inicio <= 0f)
+        {
+            f.volume = 1f;
+            f.PlayOneShot(clip, volume);
+            return;
+        }
+        // PlayOneShot sempre toca do começo: para pular o silêncio, toca como clipe da própria fonte
+        f.clip = clip;
+        f.volume = volume;
+        f.time = inicio;
+        f.Play();
     }
 
-    public void TiroJogador() => Tocar(tiro, 0.6f, false);
+    public void TiroJogador() => Tocar(tiro, 0.5f, false, 0.05f, SilencioTiro);
+    public void Passo() => Tocar(passo, 0.35f, false, 0.08f, SilencioPasso);
     public void TiroInimigo() => Tocar(tiroInimigo, 0.5f);
     public void Aparar(bool foiPerfeito) => Tocar(foiPerfeito ? perfeito : aparar, foiPerfeito ? 0.9f : 0.7f, false, 0.02f);
     public void Esquiva() => Tocar(esquiva, 0.7f, false);

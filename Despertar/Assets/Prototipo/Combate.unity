@@ -7418,6 +7418,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c508ad7e72ac8194681a7226f4578460, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Som
+  passo: {fileID: 8300000, guid: 9108851fcb95b9245b12bf17b46bf9e0, type: 3}
+  tiro: {fileID: 8300000, guid: ba206113df0871240aa187dacbc2a84d, type: 3}
 --- !u!114 &1566222854
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7504,6 +7506,7 @@ MonoBehaviour:
   gravidade: -24
   forcaPulo: 8
   sensibilidade: 0.1
+  passada: 2.2
   dashVelocidade: 26
   dashDuracao: 0.16
   dashRecarga: 0.6
@@ -9876,7 +9879,7 @@ Transform:
   m_GameObject: {fileID: 2099799546}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.034899496, z: -0, w: 0.99939084}
-  m_LocalPosition: {x: 0.009906746, y: 0.019523561, z: 0.20872316}
+  m_LocalPosition: {x: 0, y: 0.061, z: 0.21}
   m_LocalScale: {x: 0.9999999, y: 1, z: 0.9999999}
   m_ConstrainProportionsScale: 0
   m_Children: []
