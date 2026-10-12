@@ -27,7 +27,7 @@ public class Jogador : MonoBehaviour
     [Header("Munição")]
     public int pente = 12;
     public int reservaInicial = 60; // balas de sobra, fora do pente; acabou, só resta aparar
-    public float tempoRecarga = 0.6f; // tempo real
+    public float tempoRecarga = 0.2f; // tempo real; 0,2 s é o intervalo entre os dois cliques de RecargaArma.wav
 
     [Header("Aparar (segundos de jogo até o impacto)")]
     public float janela = 0.16f;
