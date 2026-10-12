@@ -14,7 +14,7 @@ public class Som : MonoBehaviour
     const float SilencioPasso = 0.1f, SilencioTiro = 0.09f;
     AudioSource[] fontes;
     int proxima;
-    AudioClip tiroInimigo, aparar, perfeito, esquiva, dano, entrarLento, sairLento, morte, dash, erro;
+    AudioClip tiroInimigo, aparar, perfeito, esquiva, dano, entrarLento, sairLento, morte, dash, erro, recarga, engatilhar, vazio;
 
     void Awake()
     {
@@ -42,6 +42,12 @@ public class Som : MonoBehaviour
         erro = Gerar("erro", 0.12f, t => Mathf.Sign(Seno(220f, t)) * Mathf.Exp(-t * 20f) * 0.12f);
         entrarLento = Varredura("entrar lento", 320f, 55f, 0.5f, 0.5f);
         sairLento = Varredura("sair lento", 70f, 260f, 0.3f, 0.4f);
+
+        // cliques metálicos da recarga: tirar o pente; pôr o pente e puxar o ferrolho; gatilho sem bala
+        float Clique(float t, float hz) => t < 0f ? 0f : Ruido() * Mathf.Exp(-t * 120f) * 0.5f + Seno(hz, t) * Mathf.Exp(-t * 45f) * 0.3f;
+        recarga = Gerar("recarga", 0.2f, t => Clique(t, 2400f) + Clique(t - 0.07f, 1600f) * 0.6f);
+        engatilhar = Gerar("engatilhar", 0.3f, t => Clique(t, 1800f) + Clique(t - 0.12f, 2800f) * 0.9f);
+        vazio = Gerar("vazio", 0.08f, t => Clique(t, 3200f) * 0.6f);
     }
 
     static AudioClip Gerar(string nome, float duracao, Func<float, float> onda)
@@ -94,6 +100,9 @@ public class Som : MonoBehaviour
 
     public void TiroJogador() => Tocar(tiro, 0.5f, false, 0.05f, SilencioTiro);
     public void Passo() => Tocar(passo, 0.35f, false, 0.08f, SilencioPasso);
+    public void Recarga() => Tocar(recarga, 0.6f, false);
+    public void Engatilhar() => Tocar(engatilhar, 0.7f, false);
+    public void Vazio() => Tocar(vazio, 0.6f, false);
     public void TiroInimigo() => Tocar(tiroInimigo, 0.5f);
     public void Aparar(bool foiPerfeito) => Tocar(foiPerfeito ? perfeito : aparar, foiPerfeito ? 0.9f : 0.7f, false, 0.02f);
     public void Esquiva() => Tocar(esquiva, 0.7f, false);

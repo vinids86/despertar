@@ -1,23 +1,23 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Interface mínima (OnGUI): mira, anel de tempo do parry, barra da câmera lenta, vida, onda e avisos.
+// Interface mínima (OnGUI): mira, anel de tempo do parry, barra da câmera lenta, vida, munição, onda e avisos.
 // O anel funciona como num jogo de ritmo: ele fecha conforme a bala chega; aperte quando encostar no anel fixo.
 public class HUD : MonoBehaviour
 {
     const string Ajuda =
         "WASD mover · Espaço pular · Shift dash\n" +
-        "Botão esquerdo atirar\n" +
+        "Botão esquerdo atirar · R recarregar\n" +
         "Botão direito (segurar) câmera lenta\n" +
         "F aparar: quando o anel fechar\n" +
-        "R reiniciar · H ajuda · Esc soltar o mouse";
+        "Backspace reiniciar · H ajuda · Esc soltar o mouse";
 
     const float RaioAlvo = 26f;
     const float RaioMaximo = 140f;
     const float Horizonte = 0.6f; // segundos de jogo antes do impacto em que o anel aparece
 
     Texture2D anel;
-    GUIStyle grande, pequeno;
+    GUIStyle grande, pequeno, municao;
     float ajudaAte;
 
     void Start()
@@ -52,6 +52,7 @@ public class HUD : MonoBehaviour
         {
             grande = new GUIStyle(GUI.skin.label) { fontSize = 34, fontStyle = FontStyle.Bold, alignment = TextAnchor.UpperCenter };
             pequeno = new GUIStyle(GUI.skin.label) { fontSize = 15 };
+            municao = new GUIStyle(GUI.skin.label) { fontSize = 28, fontStyle = FontStyle.Bold, alignment = TextAnchor.LowerRight };
         }
 
         float w = Screen.width, h = Screen.height;
@@ -92,6 +93,21 @@ public class HUD : MonoBehaviour
         // vida
         for (int i = 0; i < j.vidaMaxima; i++)
             Retangulo(new Rect(30f + i * 22f, h - 50f, 16f, 16f), i < j.Vida ? new Color(0.9f, 0.95f, 1f) : new Color(1f, 1f, 1f, 0.15f));
+
+        // munição: pente / reserva, e a barra da recarga embaixo
+        var caixa = new Rect(w - 230f, h - 76f, 200f, 36f);
+        municao.normal.textColor = j.NoPente == 0 ? new Color(1f, 0.4f, 0.35f) : j.NoPente <= j.pente / 4 ? new Color(1f, 0.75f, 0.4f) : Color.white;
+        GUI.Label(caixa, j.NoPente + " / " + j.Reserva, municao);
+        if (j.Recarregando)
+        {
+            var barra = new Rect(caixa.xMax - 120f, caixa.yMax + 6f, 120f, 6f);
+            Retangulo(barra, new Color(0f, 0f, 0f, 0.5f));
+            Retangulo(new Rect(barra.x, barra.y, barra.width * j.ProgressoRecarga, barra.height), Color.white);
+        }
+        else if (j.NoPente == 0 && j.Reserva == 0)
+        {
+            GUI.Label(new Rect(caixa.xMax - 200f, caixa.yMax, 200f, 20f), "sem munição", pequeno);
+        }
 
         if (Ondas.I != null)
             GUI.Label(new Rect(30f, 24f, 500f, 22f), "onda " + Mathf.Max(1, Ondas.I.Onda) + "/" + Ondas.I.Total + "   agentes: " + Inimigo.Vivos.Count, pequeno);

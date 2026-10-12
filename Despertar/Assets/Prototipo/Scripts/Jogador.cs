@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Primeira pessoa: anda, pula, dash, atira, segura a câmera lenta e apara balas.
+// Primeira pessoa: anda, pula, dash, atira, recarrega, segura a câmera lenta e apara balas.
 // O jogador não fica lento na câmera lenta: ele é mais rápido que a simulação.
 [RequireComponent(typeof(CharacterController))]
 public class Jogador : MonoBehaviour
@@ -23,6 +23,11 @@ public class Jogador : MonoBehaviour
     [Header("Tiro")]
     public float cadencia = 0.15f;
     public float alcance = 200f;
+
+    [Header("Munição")]
+    public int pente = 12;
+    public int reservaInicial = 60; // balas de sobra, fora do pente; acabou, só resta aparar
+    public float tempoRecarga = 1.2f; // tempo real
 
     [Header("Aparar (segundos de jogo até o impacto)")]
     public float janela = 0.16f;
@@ -47,6 +52,10 @@ public class Jogador : MonoBehaviour
     public string Aviso { get; private set; } = "";
     public Color AvisoCor { get; private set; } = Color.white;
     public float AvisoAte { get; private set; }
+    public int NoPente { get; private set; }
+    public int Reserva { get; private set; }
+    public bool Recarregando => recargaAte > 0f;
+    public float ProgressoRecarga => Recarregando ? Mathf.Clamp01(1f - (recargaAte - Time.unscaledTime) / tempoRecarga) : 0f;
 
     public Vector3 Centro => cam.transform.position - Vector3.up * 0.25f;
     public bool Invulneravel => Time.unscaledTime < invulneravelAte;
@@ -56,7 +65,7 @@ public class Jogador : MonoBehaviour
     Camera cam;
     float yaw, pitch, velY;
     Vector3 dashDir;
-    float dashAte, dashIntocavelAte, proximoDash, proximoTiro, invulneravelAte, apararBloqueadoAte;
+    float dashAte, dashIntocavelAte, proximoDash, proximoTiro, recargaAte, invulneravelAte, apararBloqueadoAte;
     float tremor, recuo, golpe, inclinacao, fovBase, andadoDesdePasso, tempoNoAr;
     Vector3 camBase, armaBase;
     Quaternion armaRotBase;
@@ -74,6 +83,8 @@ public class Jogador : MonoBehaviour
             armaRotBase = arma.localRotation;
         }
         Vida = vidaMaxima;
+        NoPente = pente;
+        Reserva = reservaInicial;
         yaw = transform.eulerAngles.y;
     }
 
@@ -94,7 +105,9 @@ public class Jogador : MonoBehaviour
         float dt = Time.unscaledDeltaTime;
         float agora = Time.unscaledTime;
 
-        if (kb.rKey.wasPressedThisFrame)
+        // R é recarregar; só reinicia quando a partida acabou (morto ou simulação limpa)
+        bool acabou = Morto || (Fase.I != null && Fase.I.Venceu) || (Ondas.I != null && Ondas.I.Venceu);
+        if (kb.backspaceKey.wasPressedThisFrame || (acabou && kb.rKey.wasPressedThisFrame))
         {
             Time.timeScale = 1f;
             UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
@@ -157,9 +170,25 @@ public class Jogador : MonoBehaviour
         // câmera lenta (segurar o botão direito)
         TempoBala.I?.Segurar(mouse.rightButton.isPressed);
 
-        // tiro
-        if (mouse.leftButton.isPressed && agora >= proximoTiro && Cursor.lockState == CursorLockMode.Locked)
-            Atirar(agora);
+        // recarga
+        if (Recarregando && agora >= recargaAte)
+            TerminarRecarga();
+        if (kb.rKey.wasPressedThisFrame)
+            Recarregar(agora);
+
+        // tiro (com o pente vazio, puxar o gatilho já recarrega)
+        if (mouse.leftButton.isPressed && agora >= proximoTiro && !Recarregando && Cursor.lockState == CursorLockMode.Locked)
+        {
+            if (NoPente > 0)
+                Atirar(agora);
+            else if (Reserva > 0)
+                Recarregar(agora);
+            else if (mouse.leftButton.wasPressedThisFrame)
+            {
+                Som.I?.Vazio();
+                MostrarAviso("sem munição", new Color(1f, 0.45f, 0.4f), 0.6f);
+            }
+        }
 
         // aparar
         if (kb.fKey.wasPressedThisFrame || mouse.forwardButton.wasPressedThisFrame || mouse.backButton.wasPressedThisFrame)
@@ -196,9 +225,27 @@ public class Jogador : MonoBehaviour
         tempoNoAr = 0f;
     }
 
+    void Recarregar(float agora)
+    {
+        if (Recarregando || NoPente >= pente || Reserva <= 0)
+            return;
+        recargaAte = agora + tempoRecarga;
+        Som.I?.Recarga();
+    }
+
+    void TerminarRecarga()
+    {
+        recargaAte = 0f;
+        int n = Mathf.Min(pente - NoPente, Reserva);
+        NoPente += n;
+        Reserva -= n;
+        Som.I?.Engatilhar();
+    }
+
     void Atirar(float agora)
     {
         proximoTiro = agora + cadencia;
+        NoPente--;
         if (TempoBala.I != null && TempoBala.I.Ativo)
             TempoBala.I.Gastar(TempoBala.I.custoPorTiro);
         recuo = 1f;
@@ -305,8 +352,10 @@ public class Jogador : MonoBehaviour
 
         if (arma != null)
         {
-            arma.localPosition = armaBase + new Vector3(0f, 0f, -0.06f) * recuo + new Vector3(-0.14f, 0.06f, 0.06f) * golpe;
-            arma.localRotation = Quaternion.Euler(-12f * recuo, 0f, 35f * golpe) * armaRotBase;
+            // na recarga a arma desce, inclina e volta
+            float baixar = Mathf.Sin(ProgressoRecarga * Mathf.PI);
+            arma.localPosition = armaBase + new Vector3(0f, 0f, -0.06f) * recuo + new Vector3(-0.14f, 0.06f, 0.06f) * golpe + new Vector3(0f, -0.12f, -0.03f) * baixar;
+            arma.localRotation = Quaternion.Euler(-12f * recuo + 30f * baixar, 0f, 35f * golpe - 20f * baixar) * armaRotBase;
         }
     }
 }
