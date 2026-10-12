@@ -7134,7 +7134,7 @@ MonoBehaviour:
   alcance: 200
   pente: 12
   reservaInicial: 60
-  tempoRecarga: 0.6
+  tempoRecarga: 0.2
   janela: 0.16
   janelaPerfeita: 0.06
   esperaAposErro: 0.35
