@@ -9,11 +9,16 @@ public class Jogador : MonoBehaviour
     public static Jogador I;
 
     [Header("Movimento")]
-    public float velocidade = 7f;
+    public float velocidade = 4.5f;
     public float gravidade = -24f;
     public float forcaPulo = 8f;
     public float sensibilidade = 0.1f;
     public float passada = 2.2f; // metros andados entre um som de passo e outro
+
+    [Header("Balanço da câmera ao andar (no ritmo dos passos)")]
+    public float balancoAltura = 0.045f; // quanto a cabeça desce a cada pisada
+    public float balancoLado = 0.03f; // de um lado ao outro a cada dois passos
+    public float balancoGiro = 0.6f; // graus
 
     [Header("Dash")]
     public float dashVelocidade = 26f;
@@ -67,6 +72,7 @@ public class Jogador : MonoBehaviour
     Vector3 dashDir;
     float dashAte, dashIntocavelAte, proximoDash, proximoTiro, recargaAte, invulneravelAte, apararBloqueadoAte;
     float tremor, recuo, golpe, inclinacao, fovBase, andadoDesdePasso, tempoNoAr;
+    float ritmo, balanco, ladoPasso = 1f;
     Vector3 camBase, armaBase;
     Quaternion armaRotBase;
 
@@ -124,6 +130,7 @@ public class Jogador : MonoBehaviour
         FlashDano = Mathf.MoveTowards(FlashDano, 0f, dt * 2.5f);
         if (Morto)
         {
+            ritmo = 0f;
             AtualizarCamera(dt);
             return;
         }
@@ -163,7 +170,10 @@ public class Jogador : MonoBehaviour
         velY += gravidade * dt;
         Vector3 antes = transform.position;
         cc.Move((movimento + Vector3.up * velY) * dt);
-        Passos(transform.position - antes, emDash, dt);
+        Vector3 deslocamento = transform.position - antes;
+        Passos(deslocamento, emDash, dt);
+        deslocamento.y = 0f;
+        ritmo = cc.isGrounded && !emDash && dt > 0f ? Mathf.Clamp01(deslocamento.magnitude / (velocidade * dt)) : 0f;
         float inclinacaoAlvo = -x * 2.5f + (emDash ? -Vector3.Dot(dashDir, transform.right) * 8f : 0f);
         inclinacao = Mathf.Lerp(inclinacao, inclinacaoAlvo, dt * 10f);
 
@@ -207,22 +217,28 @@ public class Jogador : MonoBehaviour
         }
         deslocamento.y = 0f;
         if (tempoNoAr > 0.2f) // ignora as piscadas do isGrounded em degraus e rampas
-        {
-            Som.I?.Passo();
-            andadoDesdePasso = 0f;
-        }
+            Pisar();
         else if (!emDash)
         {
             float d = deslocamento.magnitude;
             if (d < 0.001f)
-                andadoDesdePasso = passada * 0.5f; // parado: o primeiro passo vem logo ao voltar a andar
-            else if ((andadoDesdePasso += d) >= passada)
             {
-                Som.I?.Passo();
-                andadoDesdePasso = 0f;
+                // parado de vez (o balanço já sumiu): o primeiro passo vem logo ao voltar a andar;
+                // numa parada curta a passada continua de onde estava, sem a câmera dar um salto
+                if (balanco < 0.05f)
+                    andadoDesdePasso = passada * 0.5f;
             }
+            else if ((andadoDesdePasso += d) >= passada)
+                Pisar();
         }
         tempoNoAr = 0f;
+    }
+
+    void Pisar()
+    {
+        Som.I?.Passo();
+        andadoDesdePasso = 0f;
+        ladoPasso = -ladoPasso;
     }
 
     void Recarregar(float agora)
@@ -345,8 +361,13 @@ public class Jogador : MonoBehaviour
         recuo = Mathf.MoveTowards(recuo, 0f, dt * 8f);
         golpe = Mathf.MoveTowards(golpe, 0f, dt * 5f);
 
-        cam.transform.localPosition = camBase + Random.insideUnitSphere * tremor * 0.08f;
-        cam.transform.localRotation = Quaternion.Euler(pitch - recuo * 1.5f, 0f, inclinacao);
+        // balanço ao andar: a cabeça desce em cada pisada (junto com o som) e vai de um lado ao outro a cada dois passos
+        balanco = Mathf.Lerp(balanco, ritmo, dt * 8f);
+        float onda = Mathf.Sin(andadoDesdePasso / passada * Mathf.PI) * balanco;
+        Vector3 bob = new Vector3(ladoPasso * onda * balancoLado, (onda - balanco) * balancoAltura, 0f);
+
+        cam.transform.localPosition = camBase + bob + Random.insideUnitSphere * tremor * 0.08f;
+        cam.transform.localRotation = Quaternion.Euler(pitch - recuo * 1.5f, 0f, inclinacao - ladoPasso * onda * balancoGiro);
         float fovAlvo = fovBase + (Time.unscaledTime < dashAte ? 8f : 0f) - (TempoBala.I != null ? TempoBala.I.Mistura * 6f : 0f);
         cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, fovAlvo, dt * 12f);
 
