@@ -6,12 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Prototipo/Combate.unity
-    guid: 2e897983bf6697e4fadd25e76859c668
-  - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
     path: Assets/Prototipo/Escritorio.unity
     guid: c0b5b9fb80eaf144e8205452103573e5
   m_configObjects:

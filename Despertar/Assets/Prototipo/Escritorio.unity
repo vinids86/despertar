@@ -7127,6 +7127,12 @@ MonoBehaviour:
   forcaPulo: 8
   sensibilidade: 0.1
   passada: 2.2
+  balancoAltura: 0.045
+  balancoLado: 0.03
+  balancoGiro: 0.6
+  balancoArma: 0.02
+  respiracao: 0.004
+  respiracaoCiclo: 3.6
   dashVelocidade: 26
   dashDuracao: 0.16
   dashRecarga: 0.6
@@ -28922,6 +28928,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58b9141f6e95a4141b8fc6be7c23d4c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HUD
+  fonteTitulo: {fileID: 11400000, guid: ad48f2ab6fd0c464b981b9d690c63e69, type: 2}
+  fonteTexto: {fileID: 11400000, guid: b811ba7d1e643f547bd4bd4405d0622c, type: 2}
+  prefabMira: {fileID: 9222361650583066844, guid: 7b958b9a6e7d0894fbb77f9e3a3baa58, type: 3}
+  prefabTempo: {fileID: 1833205063244138202, guid: 633061b8373d3564990002732786a244, type: 3}
+  prefabArma: {fileID: 1715044154725505704, guid: 0549bb092e74ba64283d2c5ac7b8ce6c, type: 3}
+  prefabDano: {fileID: 666141829575466512, guid: d500e7ab1b9b97a41bebff38b6aaecb6, type: 3}
+  prefabFaixa: {fileID: 4546473359128379108, guid: ec85fe51205e9fa4ca8373721cd455b1, type: 3}
+  prefabEtiqueta: {fileID: 2882445530360635198, guid: 3b78a6726002f59449bf3f90626ddb92, type: 3}
+  anel: {fileID: 21300000, guid: 6323e876cbb07014c87cb2ba3b09ef72, type: 3}
+  marca: {fileID: 21300000, guid: 8f54fb892f3eeda448ba0da4690cc41f, type: 3}
+  segmento: {fileID: 21300000, guid: 68cc419df845fee45b1f03838b9db588, type: 3}
+  caixa: {fileID: 21300000, guid: 4d8d4281343c1cc43a1c05abd90ac4e6, type: 3}
+  iconeVida: {fileID: 21300000, guid: aa07cfc12eed0864abfc1866c173ca58, type: 3}
+  iconeTempo: {fileID: 21300000, guid: 5ec17eed1a417b944b4494db0a88e645, type: 3}
+  iconeArma: {fileID: 21300000, guid: 3bb2b8ca4628bea43bf8d9ad61d028c4, type: 3}
 --- !u!114 &1859744780
 MonoBehaviour:
   m_ObjectHideFlags: 0

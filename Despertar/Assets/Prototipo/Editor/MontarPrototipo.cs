@@ -1,10 +1,13 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.TextCore.LowLevel;
 
 // Monta a cena do protótipo de combate: uma praça cercada de prédios do POLYGON City, o jogador,
 // os pontos de onde os Agentes surgem e os materiais. Menu: Despertar > Montar protótipo de combate.
@@ -12,6 +15,7 @@ using UnityEngine.Rendering.Universal;
 public static class MontarPrototipo
 {
     const string Pasta = "Assets/Prototipo";
+    const string PastaHUD = "Assets/Synty/InterfaceSciFiSoldierHUD";
     const string CaminhoCena = Pasta + "/Combate.unity";
     const float Meia = 18f; // metade do lado da praça
     const float Escala = Meia / 24f; // as posições abaixo foram pensadas para uma praça de 48 m
@@ -101,8 +105,66 @@ public static class MontarPrototipo
         som.tiro = AssetDatabase.LoadAssetAtPath<AudioClip>(Pasta + "/Sons/TiroPistola.wav");
         som.recarga = AssetDatabase.LoadAssetAtPath<AudioClip>(Pasta + "/Sons/RecargaArma.wav");
         som.vazio = AssetDatabase.LoadAssetAtPath<AudioClip>(Pasta + "/Sons/GatilhoVazio.wav");
-        jogo.AddComponent<HUD>();
+        PreencherHUD(jogo.AddComponent<HUD>());
         return jogo;
+    }
+
+    // Liga a HUD às peças do pacote INTERFACE Sci-Fi Soldier HUD.
+    internal static void PreencherHUD(HUD hud)
+    {
+        hud.fonteTexto = Fonte("exo-2-0/Exo2.0-SemiBold.otf", "Exo2 SDF");
+        hud.fonteTitulo = Fonte("Orbitron/Orbitron-ExtraBold.ttf", "Orbitron SDF");
+        if (hud.fonteTitulo.fallbackFontAssetTable == null || !hud.fonteTitulo.fallbackFontAssetTable.Contains(hud.fonteTexto))
+        {
+            hud.fonteTitulo.fallbackFontAssetTable = new List<TMP_FontAsset> { hud.fonteTexto }; // a Orbitron não tem o "·"
+            EditorUtility.SetDirty(hud.fonteTitulo);
+        }
+        hud.prefabMira = PecaHUD("Reticles_Crosshairs/HUD_SciFiSoldier_Reticle_Hexagon_01");
+        hud.prefabTempo = PecaHUD("Player_Health_Equipment/HUD_SciFiSoldier_HealthBar_03");
+        hud.prefabArma = PecaHUD("Player_Health_Equipment/HUD_SciFiSoldier_CurrentWeapon_03");
+        hud.prefabDano = PecaHUD("FullscreenFX/FX_SciFiSoldier_Damage_Vignette_01");
+        hud.prefabFaixa = PecaHUD("Objectives_Story_Location/HUD_SciFiSoldier_Event_NewLocation_01");
+        hud.prefabEtiqueta = PecaHUD("Log/_Parts/HUD_SciFiSoldier_EventLog_Item_01");
+        hud.anel = SpriteHUD("HUD/SPR_HUD_SciFiSoldier_Reticle_Ring_Medium_01");
+        hud.marca = SpriteHUD("HUD/SPR_HUD_SciFiSoldier_Reticle_Ring_Small_01");
+        hud.segmento = SpriteHUD("HUD/SPR_HUD_SciFiSoldier_Bar_Angled_01");
+        hud.caixa = SpriteHUD("HUD/SPR_HUD_SciFiSoldier_Box_02");
+        hud.iconeVida = SpriteHUD("Icons_Status/ICON_SciFiSoldier_Status_Health_02");
+        hud.iconeTempo = SpriteHUD("Icons_Map/ICON_SciFiSoldier_Map_Lightning_01");
+        hud.iconeArma = SpriteHUD("Icons_Weapons/ICON_SM_Wep_Pistol_01_SciFiCity_Side");
+        EditorUtility.SetDirty(hud);
+    }
+
+    static GameObject PecaHUD(string nome) => AssetDatabase.LoadAssetAtPath<GameObject>(PastaHUD + "/Prefabs/" + nome + ".prefab");
+
+    static Sprite SpriteHUD(string nome) => AssetDatabase.LoadAssetAtPath<Sprite>(PastaHUD + "/Sprites/" + nome + ".png");
+
+    // As fontes TMP do pacote não têm acentos. Geramos as nossas das mesmas fontes (licença OFL, em Fontes/),
+    // estáticas, com o ASCII e os acentos do português.
+    static TMP_FontAsset Fonte(string origem, string nome)
+    {
+        string caminho = Pasta + "/Fontes/" + nome + ".asset";
+        var fa = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(caminho);
+        if (fa != null)
+            return fa;
+        Directory.CreateDirectory(Pasta + "/Fontes");
+        var fonte = AssetDatabase.LoadAssetAtPath<Font>(PastaHUD + "/Fonts/" + origem);
+        fa = TMP_FontAsset.CreateFontAsset(fonte, 56, 6, GlyphRenderMode.SDFAA, 1024, 1024, AtlasPopulationMode.Dynamic, false);
+        var letras = new StringBuilder();
+        for (char c = ' '; c <= '~'; c++)
+            letras.Append(c);
+        letras.Append("ÀÁÂÃÇÉÊÍÓÔÕÚàáâãçéêíóôõú·");
+        if (!fa.TryAddCharacters(letras.ToString(), out string faltando))
+            Debug.Log("[Despertar] " + nome + " sem: " + faltando);
+        fa.atlasPopulationMode = AtlasPopulationMode.Static;
+        fa.name = nome;
+        AssetDatabase.CreateAsset(fa, caminho);
+        fa.atlasTexture.name = nome + " Atlas";
+        AssetDatabase.AddObjectToAsset(fa.atlasTexture, fa);
+        fa.material.name = nome + " Material";
+        AssetDatabase.AddObjectToAsset(fa.material, fa);
+        AssetDatabase.SaveAssets();
+        return fa;
     }
 
     // Salva a cena e a coloca nas Build Settings (na posição pedida; -1 = no fim).
